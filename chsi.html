@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>学信档案原型</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f0f0f0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        
+        /* 移动端容器模拟 */
+        #app { width: 100%; max-width: 414px; height: 100%; background-color: #f7f8fa; position: relative; overflow-y: auto; overflow-x: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        
+        /* 页面切换逻辑 */
+        .page { display: none; min-height: 100%; background: #f7f8fa; padding-bottom: 80px; }
+        .page.active { display: block; animation: slideIn 0.3s ease-out; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        /* ---------------- 第一页（首页）专属样式 ---------------- */
+        
+        /* 顶部导航栏 */
+        .header-home { background-color: #1fc796; color: white; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; position: sticky; top: 0; z-index: 10; font-size: 18px; font-weight: bold; }
+        .header-home .logo-box { display: flex; align-items: center; font-size: 19px; letter-spacing: 1px; }
+        
+        /* 卡片通用样式 */
+        .action-card { background: white; margin: 12px 15px; border-radius: 8px; padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .action-btn { background-color: #1fc796; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: normal; cursor: pointer; }
+        
+        /* 数学测试卡片 */
+        .action-card-left { display: flex; align-items: center; gap: 12px; }
+        .action-card-title { font-size: 17px; color: #333; font-weight: 500; }
+        
+        /* 职位卡片 */
+        .job-card { flex-direction: column; align-items: flex-start; padding: 16px 15px; }
+        .job-top { display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 10px; }
+        .job-title { font-size: 17px; color: #333; font-weight: 500; }
+        .job-tags { display: flex; align-items: center; gap: 10px; }
+        .job-salary { color: #f46a4e; font-size: 15px; font-weight: 500; }
+        .job-edu { background-color: #e0f6f0; color: #1fc796; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+        
+        /* 蓝底 Banner */
+        .banner-blue { background: linear-gradient(135deg, #6fb2fc, #4ca0fe); margin: 12px 15px 0; border-radius: 12px 12px 0 0; padding: 20px 15px; color: white; position: relative; overflow: hidden; height: 90px; }
+        .banner-blue h3 { font-size: 18px; font-weight: bold; margin-bottom: 8px; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .banner-blue p { font-size: 11px; opacity: 0.9; line-height: 1.4; width: 65%; }
+        /* Banner 装饰图形 */
+        .banner-decor-1 { position: absolute; right: 10px; bottom: -10px; width: 60px; height: 60px; background: rgba(255,255,255,0.2); transform: rotate(45deg); border-radius: 10px; }
+        .banner-decor-2 { position: absolute; right: -20px; top: -10px; width: 50px; height: 50px; background: rgba(255,255,255,0.15); border-radius: 50%; }
+
+        /* 金刚区 9宫格 */
+        .grid-section { background: white; padding: 25px 0 20px; }
+        .home-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px 0; }
+        .home-grid-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; text-align: center; }
+        .svg-icon { width: 34px; height: 34px; margin-bottom: 10px; }
+        .home-grid-text { font-size: 13px; color: #333; line-height: 1.3; padding: 0 10px; white-space: pre-wrap; }
+
+        /* 底部导航条 */
+        .tab-bar { position: fixed; bottom: 0; width: 100%; max-width: 414px; background: white; height: 60px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+        .tab-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #999; cursor: pointer; }
+        .tab-item.active { color: #1fc796; }
+        .tab-svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
+
+
+        /* ---------------- 第二、三、四页（内页）通用及专属样式 ---------------- */
+        
+        .header { background-color: #1fc796; color: white; height: 50px; display: flex; align-items: center; justify-content: center; position: sticky; top: 0; z-index: 10; font-size: 18px; font-weight: bold; }
+        .header .back { position: absolute; left: 15px; font-size: 20px; cursor: pointer; padding: 5px; }
+        .header .more { position: absolute; right: 15px; font-size: 20px; font-weight: bold;}
+
+        /* 高等教育信息列表页 */
+        .section-title { font-size: 15px; font-weight: bold; color: #333; margin: 15px 15px 10px; display: flex; justify-content: space-between; align-items: center; }
+        .section-title span { font-size: 12px; color: #1fc796; font-weight: normal; }
+        
+        .edu-card { background: linear-gradient(135deg, #2dc490, #1fc796); border-radius: 12px; padding: 20px; margin: 0 15px 15px; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(31, 199, 150, 0.3); position: relative; }
+        .edu-card h3 { font-size: 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .edu-card .tag { background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 15px; font-size: 12px; font-weight: normal; }
+        .edu-card p { font-size: 13px; opacity: 0.9; }
+
+        /* 学籍详情页 */
+        .detail-top { background-color: #1fc796; padding: 20px 15px; color: white; }
+        .profile-row { display: flex; align-items: flex-start; margin-bottom: 20px; }
+        
+        .photo-wrapper { display: flex; flex-direction: column; align-items: center; margin-right: 15px; flex-shrink: 0; }
+        .photo-box { width: 62px; height: 85px; background-color: #eee; border-radius: 6px; margin-bottom: 6px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .photo-label { color: white; font-size: 11px; text-align: center; }
+        
+        .profile-info { margin-top: 5px; }
+        .profile-info h2 { font-size: 18px; margin-bottom: 5px; }
+        .profile-info p { font-size: 13px; opacity: 0.9; }
+        
+        .detail-card { background: white; border-radius: 12px; margin: -10px 15px 20px; padding: 20px 15px; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .info-row { display: flex; margin-bottom: 16px; font-size: 14px; }
+        .info-label { width: 100px; color: #666; }
+        .info-value { flex: 1; color: #333; font-weight: 500; }
+        
+        .btn-green { background-color: #1fc796; color: white; text-align: center; padding: 12px; border-radius: 8px; margin: 20px 15px; font-size: 16px; font-weight: bold; cursor: pointer;}
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+    
+    <div id="page1" class="page active">
+        <div class="header-home">
+            <div class="logo-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="margin-right:8px;">
+                    <path d="M4 16L12 6L20 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 17L12 11L16 17" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+                </svg>
+                学信档案
+            </div>
+            <div style="cursor: pointer; display: flex; align-items: center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="action-card">
+            <div class="action-card-left">
+                <img src="https://i.ibb.co/BHyrz47W/7b70db9904824a1e8bd4a61153d05dc2.jpg" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;" alt="avatar">
+                <div class="action-card-title">数学能力测试</div>
+            </div>
+            <div class="action-btn">去测评</div>
+        </div>
+
+        <div class="action-card job-card">
+            <div class="job-top">
+                <div class="job-title">功能测试工程师</div>
+                <div class="action-btn">更多职位</div>
+            </div>
+            <div class="job-tags">
+                <span class="job-salary">5.0k-10.0k</span>
+                <span class="job-edu">本科及以上</span>
+            </div>
+        </div>
+
+        <div class="banner-blue">
+            <h3>考证现状</h3>
+            <p>参与考证需求调研，分享备考经验，共筑高效考证指南</p>
+            <div class="banner-decor-1"></div>
+            <div class="banner-decor-2"></div>
+        </div>
+
+        <div class="grid-section">
+            <div class="home-grid">
+                <div class="home-grid-item" onclick="navigateTo('page2')">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="#1fc796">
+                        <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z"/>
+                    </svg>
+                    <div class="home-grid-text">高等教育信息</div>
+                </div>
+                <div class="home-grid-item">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="#1fc796">
+                        <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM10 17L6 13L7.41 11.59L10 14.17L16.59 7.58L18 9L10 17Z"/>
+                    </svg>
+                    <div class="home-grid-text">在线验证报告</div>
+                </div>
+                <div class="home-grid-item">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="#1fc796">
+                        <path d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.11 3.89 21 5 21H19C20.11 21 21 20.11 21 19V5C21 3.89 20.11 3 19 3ZM10 8H14V10H10V8ZM10 12H18V14H10V12ZM6 8H8V10H6V8ZM6 12H8V14H6V12ZM6 16H18V18H6V16Z"/>
+                    </svg>
+                    <div class="home-grid-text">学历学位认证<br>与成绩验证</div>
+                </div>
+                <div class="home-grid-item">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="#4a88e6">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM11 19.93C7.06 19.43 4 16.05 4 12C4 11.68 4.03 11.36 4.08 11.05L7 14V15C7 16.1 7.9 17 9 17V19.64L11 19.93ZM19.64 14.54C19.12 14.82 18.57 15 18 15H17V12C17 10.9 16.1 10 15 10H11V8H12C13.1 8 14 7.1 14 6V5.5C16.92 6.64 19 9.4 19 12.65C19 13.3 18.88 13.93 19.64 14.54Z"/>
+                    </svg>
+                    <div class="home-grid-text">出国（境）报告<br>发送</div>
+                </div>
+                <div class="home-grid-item">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="#1fc796">
+                        <path d="M12 4A4 4 0 1 1 12 12A4 4 0 0 1 12 4ZM12 14C16.42 14 20 15.79 20 18V20H4V18C4 15.79 7.58 14 12 14ZM18 10L16.5 8.5L14.5 10.5L13.5 9.5L12 11L14.5 13.5L18 10Z"/>
+                    </svg>
+                    <div class="home-grid-text">毕业证书图像<br>校对</div>
+                </div>
+                <div class="home-grid-item">
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                        <rect width="22" height="16" x="1" y="4" rx="8" fill="#1fc796"/>
+                        <text x="12" y="15" fill="white" font-size="8" font-weight="bold" text-anchor="middle" font-family="Arial">Offer</text>
+                    </svg>
+                    <div class="home-grid-text">就业</div>
+                </div>
+                <div class="home-grid-item">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="#f6a623">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM15.5 8A1.5 1.5 0 1 0 15.5 11A1.5 1.5 0 0 0 15.5 8ZM8.5 8A1.5 1.5 0 1 0 8.5 11A1.5 1.5 0 0 0 8.5 8ZM12 17.5C14.33 17.5 16.31 16.04 17.11 14H6.89C7.69 16.04 9.67 17.5 12 17.5Z"/>
+                    </svg>
+                    <div class="home-grid-text">学校满意度</div>
+                </div>
+                <div class="home-grid-item">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="#4a88e6">
+                        <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"/>
+                    </svg>
+                    <div class="home-grid-text">个人测评</div>
+                </div>
+                <div class="home-grid-item">
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                        <rect width="20" height="20" x="2" y="2" rx="4" fill="#4a88e6"/>
+                        <text x="12" y="16" fill="white" font-size="10" font-weight="bold" text-anchor="middle">双千</text>
+                    </svg>
+                    <div class="home-grid-text">“双千”计划<br>“微专业”</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-bar">
+            <div class="tab-item active">
+                <svg class="tab-svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                首页
+            </div>
+            <div class="tab-item">
+                <svg class="tab-svg" viewBox="0 0 24 24"><path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z"/></svg>
+                学籍学历学位
+            </div>
+            <div class="tab-item">
+                <svg class="tab-svg" viewBox="0 0 24 24"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"/></svg>
+                个人测评
+            </div>
+            <div class="tab-item">
+                <svg class="tab-svg" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+                求职招聘
+            </div>
+            <div class="tab-item">
+                <svg class="tab-svg" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                我的
+            </div>
+        </div>
+    </div>
+
+
+    <div id="page2" class="page">
+        <div class="header">
+            <span class="back" onclick="navigateTo('page1')">＜</span>
+            高等教育信息
+            <div class="more">...</div>
+        </div>
+        
+        <div class="section-title">
+            学籍信息 (2) <span>尝试绑定</span>
+        </div>
+        
+        <div class="edu-card" onclick="navigateTo('page3')">
+            <h3>上海海事大学 <span class="tag">硕士研究生</span></h3>
+            <p>信息与通信工程 | 全日制</p>
+        </div>
+        
+        <div class="edu-card" onclick="navigateTo('page4')">
+            <h3>南昌理工学院 <span class="tag">本科</span></h3>
+            <p>物联网工程 | 普通全日制</p>
+        </div>
+
+        <div class="section-title" style="margin-top: 30px;">
+            学历信息 (1) <span>尝试绑定</span>
+        </div>
+        <div class="edu-card" style="background: linear-gradient(135deg, #5c9df5, #4a88e6);">
+            <h3>南昌理工学院 <span class="tag">本科</span></h3>
+            <p>物联网工程 | 普通全日制</p>
+        </div>
+    </div>
+
+    <div id="page3" class="page">
+        <div class="header">
+            <span class="back" onclick="navigateTo('page2')">＜</span>
+            学信档案
+            <div class="more">...</div>
+        </div>
+        
+        <div class="detail-top">
+            <div class="profile-row">
+                <div class="photo-wrapper">
+                    <div class="photo-box">
+                        <img src="https://i.ibb.co/1Gy9fY46/image.jpg" alt="录取照片">
+                    </div>
+                    <div class="photo-label">录取照片</div>
+                </div>
+                
+                <div class="photo-wrapper">
+                    <div class="photo-box">
+                        <img src="https://i.ibb.co/h1TQtBpg/IMG-0260.jpg" alt="学历照片">
+                    </div>
+                    <div class="photo-label">学历照片</div>
+                </div>
+
+                <div class="profile-info">
+                    <h2>邱传彪</h2>
+                    <p>男 &nbsp; 1999年09月21日</p>
+                </div>
+            </div>
+            
+            <h3 style="margin-bottom: 8px; font-size: 18px;">上海海事大学 <span style="float:right; font-size: 12px; background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 15px; font-weight: normal;">硕士研究生</span></h3>
+            <p style="font-size: 14px; opacity: 0.9;">信息与通信工程 | 全日制</p>
+            <br>
+        </div>
+        
+        <div class="detail-card">
+            <div class="info-row"><div class="info-label">民族</div><div class="info-value">汉族</div></div>
+            <div class="info-row"><div class="info-label">证件号码</div><div class="info-value">3623221999092103330333</div></div>
+            <div class="info-row"><div class="info-label">学制</div><div class="info-value">3年</div></div>
+            <div class="info-row"><div class="info-label">学历类别</div><div class="info-value">普通高等教育</div></div>
+            <div class="info-row"><div class="info-label">分院</div><div class="info-value">信息工程学院</div></div>
+            <div class="info-row"><div class="info-label">系所</div><div class="info-value"></div></div>
+            <div class="info-row"><div class="info-label">班级</div><div class="info-value"></div></div>
+            <div class="info-row"><div class="info-label">学号</div><div class="info-value">202530310056</div></div>
+            <div class="info-row"><div class="info-label">入学日期</div><div class="info-value">2025年09月09日</div></div>
+            <div class="info-row"><div class="info-label">学籍状态</div><div class="info-value">在籍（注册学籍）</div></div>
+            <div class="info-row"><div class="info-label">预计毕业日期</div><div class="info-value">2028年06月30日</div></div>
+        </div>
+
+        <div class="btn-green">查看验证报告</div>
+    </div>
+
+    <div id="page4" class="page">
+        <div class="header">
+            <span class="back" onclick="navigateTo('page2')">＜</span>
+            学信档案
+            <div class="more">...</div>
+        </div>
+        
+        <div class="detail-top">
+            <div class="profile-row">
+                <div class="photo-wrapper">
+                    <div class="photo-box">
+                        <img src="https://i.ibb.co/gLwmPJ5M/a9619dd50a2ce08d0ec599c0802ac085.jpg" alt="录取照片">
+                    </div>
+                    <div class="photo-label">录取照片</div>
+                </div>
+                
+                <div class="photo-wrapper">
+                    <div class="photo-box">
+                        <img src="https://i.ibb.co/6JWc7ndx/4f6a1c38d60d4528bc4f0d6207d17121.jpg" alt="学历照片">
+                    </div>
+                    <div class="photo-label">学历照片</div>
+                </div>
+
+                <div class="profile-info">
+                    <h2>邱传彪</h2>
+                    <p>男 &nbsp; 1999年09月21日</p>
+                </div>
+            </div>
+            
+            <h3 style="margin-bottom: 8px; font-size: 18px;">南昌理工学院 <span style="float:right; font-size: 12px; background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 15px; font-weight: normal;">本科</span></h3>
+            <p style="font-size: 14px; opacity: 0.9;">物联网工程 | 普通全日制</p>
+            <br>
+        </div>
+        
+        <div class="detail-card">
+            <div class="info-row"><div class="info-label">民族</div><div class="info-value">汉族</div></div>
+            <div class="info-row"><div class="info-label">证件号码</div><div class="info-value">362322199909210333</div></div>
+            <div class="info-row"><div class="info-label">学制</div><div class="info-value">4年</div></div>
+            <div class="info-row"><div class="info-label">学历类别</div><div class="info-value">普通高等教育</div></div>
+            <div class="info-row"><div class="info-label">分院</div><div class="info-value"></div></div>
+            <div class="info-row"><div class="info-label">系所</div><div class="info-value">电子与信息学院</div></div>
+            <div class="info-row"><div class="info-label">班级</div><div class="info-value">1班</div></div>
+            <div class="info-row"><div class="info-label">学号</div><div class="info-value">180302050108</div></div>
+            <div class="info-row"><div class="info-label">入学日期</div><div class="info-value">2018年09月01日</div></div>
+            <div class="info-row"><div class="info-label">学籍状态</div><div class="info-value">不在籍（毕业）</div></div>
+            <div class="info-row"><div class="info-label">离校日期</div><div class="info-value">2022年07月06日</div></div>
+        </div>
+
+        <div class="btn-green">查看验证报告</div>
+    </div>
+
+</div>
+
+<script>
+    // 简单的路由控制功能
+    function navigateTo(pageId) {
+        // 隐藏所有页面
+        document.querySelectorAll('.page').forEach(function(page) {
+            page.classList.remove('active');
+        });
+        // 显示目标页面
+        document.getElementById(pageId).classList.add('active');
+        
+        // 滚动回顶部
+        document.getElementById('app').scrollTop = 0;
+    }
+</script>
+
+</body>
+</html>
